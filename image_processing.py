@@ -35,8 +35,8 @@ def process_image_for_drawing(filename, LEN_X, RES_X, MAX_PWR, MIN_PWR):
 
     # map to min, max power
     image_pixels = image.load()
-    for i in range(1, size_x):
-        for j in range(1, size_y):
+    for i in range(size_x):
+        for j in range(size_y):
             val = image_pixels[i, j]
             # normalized value = (value / OLD_MAX) * NEW_MAX - SHIFT, where NEW_MAX is from 0
             image_pixels[i, j] = round(((val / 255) * (MAX_PWR - MIN_PWR)) + MIN_PWR)

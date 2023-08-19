@@ -57,6 +57,8 @@ def process_image_for_cut(filename, LEN_X, RES_X):
     contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     log("Number of Contours found = " + str(len(contours)))
+    # for c in contours:
+    #     np.savetxt("foo" + str(len(c)) + ".csv", c[:,0,:], delimiter=";")
 
     # Draw all contours
     image = np.ones(image.shape[:2], dtype="uint8") * 255
@@ -65,4 +67,8 @@ def process_image_for_cut(filename, LEN_X, RES_X):
     image = Image.fromarray(image)
     image = ImageOps.grayscale(image)
 
-    return image
+    ccc = list()
+    for c in contours:
+        ccc.extend(c[:, 0, :].tolist())
+
+    return image, ccc

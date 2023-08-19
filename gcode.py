@@ -6,6 +6,7 @@ from logging import error as error
 OVERSCAN_DIST = 3
 RES_X = 10
 DRAWING_SPEED = 3000  # todo
+CUTTING_SPEED = 3000
 
 
 class Pos:
@@ -16,18 +17,13 @@ class Pos:
 
 
 class Gcode:
-    def __init__(self, pixels, size_x, size_y, off_pwr):
-        self.pixels = pixels
-        self.size_x = size_x
-        self.size_y = size_y
+    def __init__(self, off_pwr):
         self.off_pwr = off_pwr
 
         self.code = str()
 
         self.current_pos = Pos()
         self.current_pwr = 0
-
-        self.laser_off()
 
     def header(self):
         self.code += ""
@@ -54,12 +50,25 @@ class Gcode:
         self.current_pos.f = f
         self.code += f"G1 X{round(x/RES_X, 3)} Y{round(y/RES_X, 3)} F{f}\r\n"
 
-    def pwr(self, pwr):
+    def pwr(self, pwr, optimize=False):
+        if optimize and pwr == self.current_pwr:
+            return
         self.current_pwr = pwr
         self.code += f"M106 S{pwr}\r\n"
 
     def laser_off(self):
         self.pwr(self.off_pwr)
+
+
+class ScanGcode(Gcode):
+    def __init__(self, pixels, size_x, size_y, off_pwr):
+        Gcode.__init__(self, off_pwr)
+
+        self.pixels = pixels
+        self.size_x = size_x
+        self.size_y = size_y
+
+        self.laser_off()
 
     def bounding_rectangle(self):
         self.goxy(0, 0)
@@ -88,10 +97,21 @@ class Gcode:
         return False
 
 
+class LineGcode(Gcode):
+    def __init__(self, cut_pwr, off_pwr):
+        Gcode.__init__(self, off_pwr)
+        self.cut_pwr = cut_pwr
+
+        self.laser_off()
+
+    def laser_on(self):
+        self.pwr(self.cut_pwr)
+
+
 def generate_scan_gcode(image, OFF_PWR):
     size_x, size_y = image.size
 
-    gcode = Gcode(image.load(), size_x, size_y, OFF_PWR)
+    gcode = ScanGcode(image.load(), size_x, size_y, OFF_PWR)
 
     # header
     gcode.header()
@@ -118,5 +138,27 @@ def generate_scan_gcode(image, OFF_PWR):
     return gcode.code
 
 
-def generate_line_gcode(image, CUT_PWR, OFF_PWR, CUT_NUM):
-    pass
+def generate_cut_gcode(cutting_line, CUT_PWR, OFF_PWR, CUT_NUM, SHOW_PWR=None):
+    gcode = LineGcode(CUT_PWR, OFF_PWR)
+
+    gcode.header()
+    gcode.goxyf(0, 0, CUTTING_SPEED)
+
+    # prepare list of cutting powers
+    cut_list = [CUT_PWR] * CUT_NUM
+    if SHOW_PWR is not None:
+        cut_list.insert(0, SHOW_PWR)
+
+    # for each cutting power (cycle), draw a line
+    for pwr in cut_list:
+        for x, y in cutting_line:
+            gcode.goxy(x, y)
+            gcode.pwr(pwr)
+        gcode.laser_off()
+
+    gcode.laser_off()
+    gcode.footer()
+
+    print(gcode.code)
+    return gcode.code
+

@@ -1,12 +1,12 @@
 import configparser
 from matplotlib import pyplot as plt
 
-from gcode import generate_scan_gcode, generate_cut_gcode, Gcode
-from image_processing import process_image_for_drawing, process_image_for_cut
+from src.gcode import generate_scan_gcode, generate_cut_gcode, Gcode
+from src.image_processing import process_image_for_drawing, process_image_for_cut
 
-DEFAULT_SETTINGS_FILE = "settings.ini"
-DEFAULT_HEADER_FILE = "default_header.txt"
-DEFAULT_FOOTER_FILE = "default_footer.txt"
+DEFAULT_SETTINGS_FILE = "src/default/settings.ini"
+DEFAULT_HEADER_FILE = "src/default/default_header.txt"
+DEFAULT_FOOTER_FILE = "src/default/default_footer.txt"
 
 
 class Engraver:

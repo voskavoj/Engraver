@@ -3,3 +3,4 @@
 /*.jpg
 /*.png
 /*.gcode
+/src/__pycache__

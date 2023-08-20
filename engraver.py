@@ -48,7 +48,7 @@ class Engraver:
             self.footer = f.read()
 
     def move_to_start(self):
-        gcode = Gcode(self.settings["off_pwr"])
+        gcode = Gcode(self.settings["off_pwr"], self.settings["res_x"])
         gcode.laser_off()
         gcode.goxyf(self.settings["offset_x"],
                     self.settings["offset_y"],
@@ -59,24 +59,18 @@ class Engraver:
 
     def add_drawing(self, filename):
         img_drawing = process_image_for_drawing(filename,
-                                                self.settings["len_x"],
-                                                self.settings["res_x"],
-                                                self.settings["max_pwr"],
-                                                self.settings["min_pwr"])
+                                                **self.settings)
         self.preview_image = img_drawing
-        gcode_drawing = generate_scan_gcode(img_drawing, self.settings["off_pwr"])
+        gcode_drawing = generate_scan_gcode(img_drawing, **self.settings)
         self.gcode += gcode_drawing
 
-    def add_cut(self, filename, show=True):
+    def add_cut(self, filename, show=False):
         img_cut, lines_cut = process_image_for_cut(filename,
-                                                   self.settings["len_x"],
-                                                   self.settings["res_x"])
+                                                   **self.settings)
         self.preview_image = img_cut
         gcode_cut = generate_cut_gcode(lines_cut,
-                                       self.settings["cut_pwr"],
-                                       self.settings["off_pwr"],
-                                       self.settings["cut_num"],
-                                       SHOW_PWR=self.settings["min_pwr"] if show else None)
+                                       **self.settings,
+                                       show_pwr=self.settings["min_pwr"] if show else None)
         self.gcode += gcode_cut
 
     def preview(self):

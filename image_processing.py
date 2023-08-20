@@ -6,13 +6,13 @@ from logging import info as log
 from logging import warning as warn
 
 
-def _open_and_resize_image(filename, LEN_X, RES_X):
+def _open_and_resize_image(filename, len_x, res_x):
     image = Image.open(filename)
     org_size_x, org_size_y = image.size
     aspect_ratio = org_size_x / org_size_y
 
     # resize
-    size_x = round(LEN_X * RES_X)
+    size_x = round(len_x * res_x)
     size_y = round(size_x * 1 / aspect_ratio)
     log(size_x, size_y)
 
@@ -24,8 +24,8 @@ def _open_and_resize_image(filename, LEN_X, RES_X):
     return image
 
 
-def process_image_for_drawing(filename, LEN_X, RES_X, MAX_PWR, MIN_PWR):
-    image = _open_and_resize_image(filename, LEN_X, RES_X)
+def process_image_for_drawing(filename, len_x, res_x, max_pwr, min_pwr, **kwargs):
+    image = _open_and_resize_image(filename, len_x, res_x)
 
     size_x, size_y = image.size
     # convert to BW and invert
@@ -38,13 +38,13 @@ def process_image_for_drawing(filename, LEN_X, RES_X, MAX_PWR, MIN_PWR):
         for j in range(size_y):
             val = image_pixels[i, j]
             # normalized value = (value / OLD_MAX) * NEW_MAX - SHIFT, where NEW_MAX is from 0
-            image_pixels[i, j] = round(((val / 255) * (MAX_PWR - MIN_PWR)) + MIN_PWR)
+            image_pixels[i, j] = round(((val / 255) * (max_pwr - min_pwr)) + min_pwr)
 
     return image
 
 
-def process_image_for_cut(filename, LEN_X, RES_X):
-    image = _open_and_resize_image(filename, LEN_X, RES_X)
+def process_image_for_cut(filename, len_x, res_x, **kwargs):
+    image = _open_and_resize_image(filename, len_x, res_x)
 
     image = np.asarray(image)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -66,8 +66,8 @@ def process_image_for_cut(filename, LEN_X, RES_X):
     image = Image.fromarray(image)
     image = ImageOps.grayscale(image)
 
-    ccc = list()
+    list_of_contours = list()
     for c in contours:
-        ccc.extend(c[:, 0, :].tolist())
+        list_of_contours.extend(c[:, 0, :].tolist())
 
-    return image, ccc
+    return image, list_of_contours

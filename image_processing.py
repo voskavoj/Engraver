@@ -4,7 +4,6 @@ import numpy as np
 
 from logging import info as log
 from logging import warning as warn
-from logging import error as error
 
 
 def _open_and_resize_image(filename, LEN_X, RES_X):

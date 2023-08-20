@@ -1,7 +1,3 @@
-from PIL import Image, ImageOps
-from logging import info as log
-from logging import warning as warn
-from logging import error as error
 
 OVERSCAN_DIST = 3
 RES_X = 10
@@ -33,28 +29,33 @@ class Gcode:
 
     def gox(self, x):
         self.current_pos.x = x
-        self.code += f"G1 X{round(x/RES_X, 3)}\r\n"
+        self.code += f"G1 X{round(x/RES_X, 3)}\n"
 
     def goy(self, y):
         self.current_pos.y = y
-        self.code += f"G1 Y{round(y/RES_X, 3)}\r\n"
+        self.code += f"G1 Y{round(y/RES_X, 3)}\n"
 
     def goxy(self, x, y):
         self.current_pos.x = x
         self.current_pos.y = y
-        self.code += f"G1 X{round(x/RES_X, 3)} Y{round(y/RES_X, 3)}\r\n"
+        self.code += f"G1 X{round(x/RES_X, 3)} Y{round(y/RES_X, 3)}\n"
 
     def goxyf(self, x, y, f):
         self.current_pos.x = x
         self.current_pos.y = y
         self.current_pos.f = f
-        self.code += f"G1 X{round(x/RES_X, 3)} Y{round(y/RES_X, 3)} F{f}\r\n"
+        self.code += f"G1 X{round(x/RES_X, 3)} Y{round(y/RES_X, 3)} F{f}\n"
 
     def pwr(self, pwr, optimize=False):
         if optimize and pwr == self.current_pwr:
             return
         self.current_pwr = pwr
-        self.code += f"M106 S{pwr}\r\n"
+        self.code += f"M106 S{pwr}\n"
+
+    def reset_position(self):
+        self.current_pos.x = 0
+        self.current_pos.y = 0
+        self.code += f"G92 X0 Y0\n"
 
     def laser_off(self):
         self.pwr(self.off_pwr)
@@ -152,13 +153,12 @@ def generate_cut_gcode(cutting_line, CUT_PWR, OFF_PWR, CUT_NUM, SHOW_PWR=None):
     # for each cutting power (cycle), draw a line
     for pwr in cut_list:
         for x, y in cutting_line:
-            gcode.goxy(x, y)
+            gcode.goxy(x/RES_X, y/RES_X)
             gcode.pwr(pwr)
         gcode.laser_off()
 
     gcode.laser_off()
     gcode.footer()
 
-    print(gcode.code)
     return gcode.code
 

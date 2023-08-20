@@ -6,7 +6,7 @@ IMG_FILENAME = "dragon.png"
 
 engraving = Engraver()
 engraving.load_settings()
-engraving.move_to_start()
+engraving.move_to_starting_position()
 engraving.add_drawing(IMG_FILENAME)
 engraving.preview()
 engraving.add_cut(IMG_FILENAME)

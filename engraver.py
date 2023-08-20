@@ -10,6 +10,27 @@ DEFAULT_FOOTER_FILE = "default_footer.txt"
 
 
 class Engraver:
+    """
+        Prepares GCODE for engraving
+
+        Basic usage setup:
+            eng = Engraver()
+            eng.load_settings()
+            eng.add_drawing("image.png") and/or eng.add_cut("image.png")
+            eng.save_gcode("output")
+
+        Methods:
+            - load_settings(filename*) - loads settings file, if no argument, default is used
+            - load_header(filename*) - loads header file, if no argument or not called, default is used
+            - load_footer(filename*) - loads footer file, if no argument or not called, default is used
+            - set_image_properties(horizontal_size*, resolution*) - overrides basic image properties from settings
+            - move_to_starting_position(x*, y*) - moves to offset position
+            - add_drawing(image filename) - creates GCODE for drawing
+            - add_cut(image filename, show outline*) - creates GCODE for cutting
+            - save_gcode(name) - saves GCODE
+            - preview() - previews last generated image
+            - visualize() - visualizes GCODE as plot
+    """
     def __init__(self):
         self.settings = dict()
         self.header = None
@@ -48,11 +69,17 @@ class Engraver:
         with open(footer_file, "r") as f:
             self.footer = f.read()
 
-    def move_to_start(self):
-        gcode = Gcode(self.settings["off_pwr"], self.settings["res_x"])
+    def set_image_properties(self, horizontal_size=None, resolution=None):
+        if horizontal_size is not None:
+            self.settings["len_x"] = horizontal_size
+        if resolution is not None:
+            self.settings["res_x"] = resolution
+
+    def move_to_starting_position(self, x=None, y=None):
+        gcode = Gcode(self.settings["off_pwr"], res_x=1)
         gcode.laser_off()
-        gcode.goxyf(self.settings["offset_x"],
-                    self.settings["offset_y"],
+        gcode.goxyf(x if x else self.settings["offset_x"],
+                    y if y else self.settings["offset_y"],
                     self.settings["travel_speed"])
         gcode.reset_position()
 
@@ -91,7 +118,7 @@ class Engraver:
             self.load_footer()
 
         gcode = self.header + self.gcode + self.footer
-        with open("LAS_" + filename, "w") as output:
+        with open("LAS_" + filename + ".gcode", "w") as output:
             output.write(gcode)
 
 

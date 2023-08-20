@@ -79,7 +79,6 @@ class ScanGcode(Gcode):
                 self.goxy(idx, row_index)
                 self.laser_off()
                 return True
-
         return False
 
     def go_to_next_different_pwr_level(self, row_index):

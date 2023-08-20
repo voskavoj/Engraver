@@ -26,7 +26,7 @@ class Gcode:
 
     def gof(self, f):
         self.current_pos.f = f
-        self.code += f"G1 Y{f}\n"
+        self.code += f"G1 F{f}\n"
 
     def goxy(self, x, y):
         self.current_pos.x = x
@@ -75,7 +75,7 @@ class ScanGcode(Gcode):
     def go_to_overscan_distance(self, row_index):
         for x in range(self.size_x):
             if self.pixels[x, row_index] != self.off_pwr:  # found non empty pixel
-                idx = min(0, x - self.overscan_dist * self.res_x)
+                idx = max(0, x - self.overscan_dist * self.res_x)
                 self.goxy(idx, row_index)
                 self.laser_off()
                 return True

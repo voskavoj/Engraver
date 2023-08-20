@@ -1,4 +1,5 @@
 import configparser
+from matplotlib import pyplot as plt
 
 from gcode import generate_scan_gcode, generate_cut_gcode, Gcode
 from image_processing import process_image_for_drawing, process_image_for_cut
@@ -81,7 +82,7 @@ class Engraver:
 
     def visualize(self):
         # todo
-        print("Not implemented yet")
+        visualize_gcode(self.gcode)
 
     def save_gcode(self, filename):
         if self.header is None:
@@ -92,3 +93,32 @@ class Engraver:
         gcode = self.header + self.gcode + self.footer
         with open("LAS_" + filename, "w") as output:
             output.write(gcode)
+
+
+def visualize_gcode(gcode: str):
+    gcode = gcode.split("\n")
+    # prepare list of points
+    x, y, pwr = 0, 0, 0
+    xs = []
+    ys = []
+    powers = []
+
+    for cmd in gcode:
+        if cmd.startswith("M106"):
+            pwr = int(cmd.split("S")[1])
+        elif cmd.startswith("G1"):
+            coords = cmd.split(" ")
+            for coord in coords:
+                if coord.startswith("X"):
+                    x = float(coord[1:])
+                elif coord.startswith("Y"):
+                    y = float(coord[1:])
+            xs.append(x)
+            ys.append(y)
+            powers.append(pwr)
+
+    plt.scatter(xs, ys, c=powers, linewidths=0.1, marker=".", cmap="hot")
+    plt.plot(xs, ys, alpha=0.2)
+    plt.show()
+
+

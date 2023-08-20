@@ -55,12 +55,13 @@ class Gcode:
 
 
 class ScanGcode(Gcode):
-    def __init__(self, pixels, size_x, size_y, off_pwr, res_x, overscan_dist):
+    def __init__(self, pixels, size_x, size_y, off_pwr, min_pwr, res_x, overscan_dist):
         Gcode.__init__(self, off_pwr, res_x)
 
         self.pixels = pixels
         self.size_x = size_x
         self.size_y = size_y
+        self.min_pwr = min_pwr
         self.overscan_dist = overscan_dist
 
         self.laser_off()
@@ -74,7 +75,7 @@ class ScanGcode(Gcode):
 
     def go_to_overscan_distance(self, row_index):
         for x in range(self.size_x):
-            if self.pixels[x, row_index] != self.off_pwr:  # found non empty pixel
+            if self.pixels[x, row_index] != self.min_pwr:  # found non empty pixel
                 idx = max(0, x - self.overscan_dist * self.res_x)
                 self.goxy(idx, row_index)
                 self.laser_off()
@@ -102,10 +103,10 @@ class LineGcode(Gcode):
         self.pwr(self.cut_pwr)
 
 
-def generate_scan_gcode(image, off_pwr, res_x, overscan_dist, drawing_speed, travel_speed, **kwargs):
+def generate_scan_gcode(image, off_pwr, min_pwr, res_x, overscan_dist, drawing_speed, travel_speed, **kwargs):
     size_x, size_y = image.size
 
-    gcode = ScanGcode(image.load(), size_x, size_y, off_pwr, res_x, overscan_dist)
+    gcode = ScanGcode(image.load(), size_x, size_y, off_pwr, min_pwr, res_x, overscan_dist)
 
     # bounding rectangle
     gcode.goxyf(0, 0, drawing_speed)

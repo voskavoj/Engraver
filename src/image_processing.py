@@ -20,6 +20,7 @@ def _open_and_resize_image(filename, len_x, res_x):
         warn("New image is larger")
 
     image = image.resize((size_x, size_y))
+    image = ImageOps.mirror(image)  # flip image to preserve actual alignment
 
     return image
 
@@ -101,4 +102,5 @@ def visualize_gcode_as_image(gcode: str, resolution):
     for i in range(len(xs)-1):
         draw.line((xs[i], ys[i], xs[i+1], ys[i+1]), fill=powers[i])
 
+    image = ImageOps.mirror(image)  # flip image to not confuse the user
     return image

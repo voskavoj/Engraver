@@ -107,7 +107,7 @@ class Engraver:
             print("No image to preview")
 
     def visualize(self, show=True, save_as=""):
-        image = visualize_gcode_as_image(self.gcode, self.settings["res_x"]).show()
+        image = visualize_gcode_as_image(self.gcode, self.settings["res_x"])
         if show:
             image.show()
         if save_as != "":

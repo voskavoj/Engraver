@@ -2,7 +2,6 @@ from PIL import Image, ImageOps, ImageDraw
 import cv2
 import numpy as np
 
-from logging import info as log
 from logging import warning as warn
 
 
@@ -14,7 +13,7 @@ def _open_and_resize_image(filename, len_x, res_x):
     # resize
     size_x = round(len_x * res_x)
     size_y = round(size_x * 1 / aspect_ratio)
-    log(size_x, size_y)
+    print(size_x, size_y)
 
     if size_x > org_size_x or size_y > org_size_y:
         warn("New image is larger")
@@ -56,9 +55,7 @@ def process_image_for_cut(filename, len_x, res_x, **kwargs):
     # Finding Contours
     contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    log("Number of Contours found = " + str(len(contours)))
-    # for c in contours:
-    #     np.savetxt("foo" + str(len(c)) + ".csv", c[:,0,:], delimiter=";")
+    print(f"Number of contours: {len(contours)}")
 
     # Draw all contours
     image = np.ones(image.shape[:2], dtype="uint8") * 255
@@ -69,7 +66,7 @@ def process_image_for_cut(filename, len_x, res_x, **kwargs):
 
     list_of_contours = list()
     for c in contours:
-        list_of_contours.extend(c[:, 0, :].tolist())
+        list_of_contours.append(c[:, 0, :].tolist())
 
     return image, list_of_contours
 
@@ -99,8 +96,8 @@ def visualize_gcode_as_image(gcode: str, resolution):
     image = Image.new('L', (max(xs), max(ys)), 255)
     draw = ImageDraw.Draw(image)
 
-    for i in range(len(xs)-1):
-        draw.line((xs[i], ys[i], xs[i+1], ys[i+1]), fill=powers[i])
+    for i in range(1, len(xs)):
+        draw.line((xs[i-1], ys[i-1], xs[i], ys[i]), fill=powers[i])
 
     image = ImageOps.mirror(image)  # flip image to not confuse the user
     return image

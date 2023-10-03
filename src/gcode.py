@@ -66,13 +66,6 @@ class ScanGcode(Gcode):
 
         self.laser_off()
 
-    def bounding_rectangle(self):
-        self.goxy(0, 0)
-        self.goxy(self.size_x, 0)
-        self.goxy(self.size_x, self.size_y)
-        self.goxy(0, self.size_y)
-        self.goxy(0, 0)
-
     def go_to_overscan_distance(self, row_index):
         for x in range(self.size_x):
             if self.pixels[x, row_index] != self.min_pwr:  # found non empty pixel
@@ -130,24 +123,26 @@ def generate_scan_gcode(image, off_pwr, min_pwr, res_x, overscan_dist, drawing_s
     return gcode.code
 
 
-def generate_cut_gcode(cutting_line, cut_pwr, off_pwr, cut_num, res_x,
-                       cutting_speed, travel_speed, show_pwr=None, **kwargs):
-    gcode = LineGcode(cut_pwr, off_pwr, res_x)
+def generate_cut_gcode(cutting_lines, cut_pwr, off_pwr, cut_num, res_x,
+                       cutting_speed, travel_speed, **kwargs):
 
-    # prepare list of cutting powers
-    cut_list = [cut_pwr] * cut_num
-    if show_pwr is not None:
-        cut_list.insert(0, show_pwr)
+    gcode = LineGcode(cut_pwr, off_pwr, res_x)
+    gcode.laser_off()
+
+    for _ in range(cut_num):
+        for line in cutting_lines:
+            # go to start of line
+            x, y = line[0]
+            gcode.laser_off()
+            gcode.goxyf(x, y, travel_speed)
+            gcode.gof(cutting_speed)  # set cutting speed
+
+            # perform cut
+            gcode.pwr(cut_pwr)
+            for x, y in line:
+                gcode.goxy(x, y)
+            gcode.pwr(255)
 
     gcode.laser_off()
-    gcode.goxyf(0, 0, travel_speed)
-    gcode.gof(cutting_speed)
-    # for each cutting power (cycle), draw a line
-    for pwr in cut_list:
-        for x, y in cutting_line:
-            gcode.goxy(x, y)
-            gcode.pwr(pwr)
-        gcode.laser_off()
-
     gcode.laser_off()
     return gcode.code

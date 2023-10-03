@@ -91,13 +91,23 @@ class Engraver:
         gcode_drawing = generate_scan_gcode(img_drawing, **self.settings)
         self.gcode += gcode_drawing
 
-    def add_cut(self, filename, show=False):
+    def add_cut(self, filename):
         img_cut, lines_cut = process_image_for_cut(filename,
                                                    **self.settings)
         self.preview_image = img_cut
         gcode_cut = generate_cut_gcode(lines_cut,
-                                       **self.settings,
-                                       show_pwr=self.settings["min_pwr"] if show else None)
+                                       **self.settings)
+        self.gcode += gcode_cut
+
+    def add_outline(self, filename):
+        img_cut, lines_cut = process_image_for_cut(filename,
+                                                   **self.settings)
+        self.preview_image = img_cut
+
+        settings = {**self.settings,
+                    "cut_num": 1,
+                    "cut_pwr": self.settings["min_pwr"]}
+        gcode_cut = generate_cut_gcode(lines_cut, **settings)
         self.gcode += gcode_cut
 
     def preview(self):

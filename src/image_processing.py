@@ -1,4 +1,4 @@
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw
 import cv2
 import numpy as np
 
@@ -71,3 +71,34 @@ def process_image_for_cut(filename, len_x, res_x, **kwargs):
         list_of_contours.extend(c[:, 0, :].tolist())
 
     return image, list_of_contours
+
+
+def visualize_gcode_as_image(gcode: str, resolution):
+    gcode = gcode.split("\n")
+    # prepare list of points
+    x, y, pwr = 0, 0, 0
+    xs = []
+    ys = []
+    powers = []
+
+    for cmd in gcode:
+        if cmd.startswith("M106"):
+            pwr = int(cmd.split("S")[1])
+        elif cmd.startswith("G1"):
+            coords = cmd.split(" ")
+            for coord in coords:
+                if coord.startswith("X"):
+                    x = int(float(coord[1:]) * resolution)
+                elif coord.startswith("Y"):
+                    y = int(float(coord[1:]) * resolution)
+            xs.append(x)
+            ys.append(y)
+            powers.append(pwr)
+
+    image = Image.new('L', (max(xs), max(ys)), 255)
+    draw = ImageDraw.Draw(image)
+
+    for i in range(len(xs)-1):
+        draw.line((xs[i], ys[i], xs[i+1], ys[i+1]), fill=powers[i])
+
+    return image

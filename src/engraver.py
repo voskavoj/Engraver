@@ -1,8 +1,7 @@
 import configparser
-from matplotlib import pyplot as plt
 
 from src.gcode import generate_scan_gcode, generate_cut_gcode, Gcode
-from src.image_processing import process_image_for_drawing, process_image_for_cut
+from src.image_processing import process_image_for_drawing, process_image_for_cut, visualize_gcode_as_image
 
 DEFAULT_SETTINGS_FILE = "src/default/settings.ini"
 DEFAULT_HEADER_FILE = "src/default/default_header.txt"
@@ -107,9 +106,12 @@ class Engraver:
         else:
             print("No image to preview")
 
-    def visualize(self):
-        # todo
-        visualize_gcode(self.gcode)
+    def visualize(self, show=True, save_as=""):
+        image = visualize_gcode_as_image(self.gcode, self.settings["res_x"]).show()
+        if show:
+            image.show()
+        if save_as != "":
+            image.save(save_as + ".png")
 
     def save_gcode(self, filename):
         if self.header is None:
@@ -120,32 +122,5 @@ class Engraver:
         gcode = self.header + self.gcode + self.footer
         with open("LAS_" + filename + ".gcode", "w") as output:
             output.write(gcode)
-
-
-def visualize_gcode(gcode: str):
-    gcode = gcode.split("\n")
-    # prepare list of points
-    x, y, pwr = 0, 0, 0
-    xs = []
-    ys = []
-    powers = []
-
-    for cmd in gcode:
-        if cmd.startswith("M106"):
-            pwr = int(cmd.split("S")[1])
-        elif cmd.startswith("G1"):
-            coords = cmd.split(" ")
-            for coord in coords:
-                if coord.startswith("X"):
-                    x = float(coord[1:])
-                elif coord.startswith("Y"):
-                    y = float(coord[1:])
-            xs.append(x)
-            ys.append(y)
-            powers.append(pwr)
-
-    plt.scatter(xs, ys, c=powers, linewidths=0.1, marker=".", cmap="hot")
-    plt.plot(xs, ys, alpha=0.2)
-    plt.show()
 
 

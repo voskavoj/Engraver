@@ -93,11 +93,12 @@ def visualize_gcode_as_image(gcode: str, resolution):
             ys.append(y)
             powers.append(pwr)
 
-    image = Image.new('L', (max(xs), max(ys)), 255)
+    image = Image.new('L', (max(xs), max(ys)), 200)
     draw = ImageDraw.Draw(image)
 
     for i in range(1, len(xs)):
-        draw.line((xs[i-1], ys[i-1], xs[i], ys[i]), fill=powers[i])
+        if powers[i] <= 250:  # todo min power
+            draw.line((xs[i-1], ys[i-1], xs[i], ys[i]), fill=powers[i])
 
     image = ImageOps.mirror(image)  # flip image to not confuse the user
     return image

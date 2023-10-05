@@ -77,9 +77,9 @@ class Engraver:
     def move_to_starting_position(self, x=None, y=None):
         gcode = Gcode(self.settings["off_pwr"], res_x=1)
         gcode.laser_off()
-        gcode.goxyf(x if x else self.settings["offset_x"],
-                    y if y else self.settings["offset_y"],
-                    self.settings["travel_speed"])
+        gcode.go(x if x else self.settings["offset_x"],
+                 y if y else self.settings["offset_y"],
+                 self.settings["travel_speed"])
         gcode.reset_position()
 
         self.gcode += gcode.code

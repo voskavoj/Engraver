@@ -4,6 +4,7 @@ class Pos:
         self.x = 0
         self.y = 0
         self.f = 0
+        self.pwr = 0
 
 
 class Gcode:
@@ -14,35 +15,37 @@ class Gcode:
         self.code = str()
 
         self.current_pos = Pos()
-        self.current_pwr = 0
 
-    def gox(self, x):
-        self.current_pos.x = x
-        self.code += f"G1 X{round(x/self.res_x, 3)}\n"
+    def go(self, x=None, y=None, f=None, optimize=True):
+        assert x or y or f
+        out = ""
 
-    def goy(self, y):
-        self.current_pos.y = y
-        self.code += f"G1 Y{round(y/self.res_x, 3)}\n"
+        if x:
+            if optimize and self.current_pos.x == x:
+                pass
+            else:
+                self.current_pos.x = x
+                out += f" X{round(x/self.res_x, 3)}"
+        if y:
+            if optimize and self.current_pos.y == y:
+                pass
+            else:
+                self.current_pos.y = y
+                out += f" Y{round(y/self.res_x, 3)}"
+        if f:
+            if optimize and self.current_pos.f == f:
+                pass  # do not write speed if it does not differ from before
+            else:
+                self.current_pos.f = f
+                out += f" F{f}"
 
-    def gof(self, f):
-        self.current_pos.f = f
-        self.code += f"G1 F{f}\n"
-
-    def goxy(self, x, y):
-        self.current_pos.x = x
-        self.current_pos.y = y
-        self.code += f"G1 X{round(x/self.res_x, 3)} Y{round(y/self.res_x, 3)}\n"
-
-    def goxyf(self, x, y, f):
-        self.current_pos.x = x
-        self.current_pos.y = y
-        self.current_pos.f = f
-        self.code += f"G1 X{round(x/self.res_x, 3)} Y{round(y/self.res_x, 3)} F{f}\n"
+        if out:
+            self.code += "G1" + out + "\n"
 
     def pwr(self, pwr, optimize=False):
-        if optimize and pwr == self.current_pwr:
+        if optimize and pwr == self.current_pos.pwr:
             return
-        self.current_pwr = pwr
+        self.current_pos.pwr = pwr
         self.code += f"M106 S{pwr}\n"
 
     def reset_position(self):
@@ -51,7 +54,7 @@ class Gcode:
         self.code += f"G92 X0 Y0\n"
 
     def laser_off(self):
-        self.pwr(self.off_pwr)
+        self.pwr(self.off_pwr, optimize=False)
 
 
 class ScanGcode(Gcode):
@@ -66,23 +69,24 @@ class ScanGcode(Gcode):
 
         self.laser_off()
 
-    def go_to_overscan_distance(self, row_index):
-        for x in range(self.size_x):
+    def go_to_overscan_distance(self, start_index, row_index):
+        for x in range(start_index, self.size_x):
             if self.pixels[x, row_index] != self.min_pwr:  # found non empty pixel
                 idx = max(0, x - self.overscan_dist * self.res_x)
-                self.goxy(idx, row_index)
+                self.go(idx, row_index)
                 self.laser_off()
                 return True
         return False
 
-    def go_to_next_different_pwr_level(self, row_index):
+    def find_next_different_pwr_level(self, row_index):
         for x in range(self.current_pos.x + 1, self.size_x):
-            if (pixval := self.pixels[x, row_index]) != self.current_pwr:  # found non empty pixel
-                self.gox(x)
-                self.pwr(pixval)
-                return True
+            if (pixval := self.pixels[x, row_index]) != self.current_pos.pwr:  # found non empty pixel
+                # self.go(x)
+                # self.pwr(pixval)
+                if pixval != self.off_pwr:
+                    return x, pixval
 
-        return False
+        return False, False
 
 
 class LineGcode(Gcode):
@@ -101,20 +105,29 @@ def generate_scan_gcode(image, off_pwr, min_pwr, res_x, overscan_dist, drawing_s
 
     gcode = ScanGcode(image.load(), size_x, size_y, off_pwr, min_pwr, res_x, overscan_dist)
 
-    # bounding rectangle
-    gcode.goxyf(0, 0, drawing_speed)
-    gcode.bounding_rectangle()
-
     for row in range(size_y):  # y - row
-        gcode.gof(travel_speed)
+        gcode.go(f=travel_speed)
         # go to overscan distance, and if there is no pixel in row, continue to next row
-        if gcode.go_to_overscan_distance(row_index=row) is False:
+        if gcode.go_to_overscan_distance(row_index=row, start_index=0) is False:
             continue
 
-        gcode.gof(drawing_speed)
-        # find next pixel of different value until EOL
-        while gcode.go_to_next_different_pwr_level(row_index=row) is True:
-            pass  # it happens in while
+        # find next pixel of different value until end of row
+        while True:
+            pix_idx, pix_val = gcode.find_next_different_pwr_level(row_index=row)
+            if not (pix_idx and pix_val):
+                break
+
+            # if laser is running at or below minimal power AND the distance to the next pixel of higher power
+            #   is higher than twice the overscan distance, go to overscan distance at travel speed
+            if gcode.current_pos.pwr >= min_pwr and (pix_idx / res_x - gcode.current_pos.x) > (overscan_dist * 2):
+                # calculate overscan pixel index (and move it by one to be sure that an infinite loop doesn't happen
+                overscan_pix = int(((pix_idx / res_x) - overscan_dist) * res_x) + 1
+                print(pix_idx, overscan_pix)
+                gcode.go(x=overscan_pix, y=row, f=drawing_speed)
+                gcode.pwr(min_pwr+1)
+            else:
+                gcode.go(x=pix_idx, y=row, f=drawing_speed)
+                gcode.pwr(pix_val)
 
         # turn off laser
         gcode.laser_off()
@@ -134,13 +147,12 @@ def generate_cut_gcode(cutting_lines, cut_pwr, off_pwr, cut_num, res_x,
             # go to start of line
             x, y = line[0]
             gcode.laser_off()
-            gcode.goxyf(x, y, travel_speed)
-            gcode.gof(cutting_speed)  # set cutting speed
+            gcode.go(x, y, travel_speed)
 
             # perform cut
             gcode.pwr(cut_pwr)
             for x, y in line:
-                gcode.goxy(x, y)
+                gcode.go(x, y, cutting_speed)
             gcode.pwr(255)
 
     gcode.laser_off()

@@ -81,8 +81,6 @@ class ScanGcode(Gcode):
     def find_next_different_pwr_level(self, row_index):
         for x in range(self.current_pos.x + 1, self.size_x):
             if (pixval := self.pixels[x, row_index]) != self.current_pos.pwr:  # found non empty pixel
-                # self.go(x)
-                # self.pwr(pixval)
                 if pixval != self.off_pwr:
                     return x, pixval
 
@@ -98,3 +96,7 @@ class LineGcode(Gcode):
 
     def laser_on(self):
         self.pwr(self.cut_pwr)
+
+
+def calculate_overscan_pixel(pixel, resolution, overscan_distance):
+    return int(max(0, pixel - overscan_distance * resolution))

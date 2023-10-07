@@ -1,4 +1,4 @@
-from src.gcode_tools import ScanGcode, LineGcode
+from src.gcode_tools import *
 
 
 def generate_scan_gcode(image, off_pwr, min_pwr, res_x, overscan_dist, drawing_speed, travel_speed, **kwargs):
@@ -15,15 +15,14 @@ def generate_scan_gcode(image, off_pwr, min_pwr, res_x, overscan_dist, drawing_s
         # find next pixel of different value until end of row
         while True:
             pix_idx, pix_val = gcode.find_next_different_pwr_level(row_index=row)
-            if not (pix_idx and pix_val):
+            if not (pix_idx and pix_val):  # row is empty
                 break
 
             # if laser is running at or below minimal power AND the distance to the next pixel of higher power
             #   is higher than twice the overscan distance, go to overscan distance at travel speed
             if gcode.current_pos.pwr >= min_pwr and (pix_idx / res_x - gcode.current_pos.x) > (overscan_dist * 2):
                 # calculate overscan pixel index (and move it by one to be sure that an infinite loop doesn't happen
-                overscan_pix = int(((pix_idx / res_x) - overscan_dist) * res_x) + 1
-                print(pix_idx, overscan_pix)
+                overscan_pix = calculate_overscan_pixel(pix_idx, res_x, overscan_dist) + 1
                 gcode.go(x=overscan_pix, y=row, f=drawing_speed)
                 gcode.pwr(min_pwr+1)
             else:

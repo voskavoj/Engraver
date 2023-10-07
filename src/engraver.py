@@ -1,6 +1,7 @@
 import configparser
 
-from src.gcode import generate_scan_gcode, generate_cut_gcode, Gcode
+from src.gcode_processing import generate_scan_gcode, generate_cut_gcode
+from src.gcode_tools import Gcode
 from src.image_processing import process_image_for_drawing, process_image_for_cut, visualize_gcode_as_image
 
 DEFAULT_SETTINGS_FILE = "src/default/settings.ini"

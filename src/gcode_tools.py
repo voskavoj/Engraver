@@ -58,53 +58,17 @@ class Gcode:
 
 
 class ScanGcode(Gcode):
-    def __init__(self, pixels, size_x, size_y, off_pwr, min_pwr, max_pwr, res_x, overscan_dist):
+    def __init__(self, res_x, off_pwr, min_pwr, max_pwr):
         Gcode.__init__(self, off_pwr, res_x)
 
-        self.pixels = pixels
-        self.size_x = size_x
-        self.size_y = size_y
         self.min_pwr = min_pwr
         self.max_pwr = max_pwr
-        self.overscan_dist = overscan_dist
 
         self.laser_off()
 
-    def pwr_map(self, pix_value):
-        self.pwr(self._pixval_to_pwr(pix_value))
-
-    def _pixval_to_pwr(self, pixval):
-        return round(((pixval / 255) * (self.max_pwr - self.min_pwr)) + self.min_pwr)
-
-    def is_laser_running(self):
-        if self.current_pos.pwr == self.off_pwr:
-            return False
-        if self.min_pwr > self.max_pwr:  # inverted
-            return not self.current_pos.pwr >= self.min_pwr
-        else:
-            return not self.current_pos.pwr <= self.min_pwr
-
-    def is_next_pixel_far(self, pix):
-        # if laser is running at or below minimal power AND the distance to the next pixel of higher power
-        #   is higher than twice the overscan distance, go to overscan distance at travel speed
-        return not self.is_laser_running() and (pix / self.res_x - self.current_pos.x) > (self.overscan_dist * 2)
-
-    def go_to_overscan_distance(self, row_index):
-        for x in range(self.size_x):
-            if self.pixels[x, row_index] != 0:  # found non empty pixel
-                idx = max(0, x - self.overscan_dist * self.res_x)
-                self.go(idx, row_index)
-                self.laser_off()
-                return True
-        return False
-
-    def find_next_different_pwr_level(self, row_index):
-        for x in range(self.current_pos.x + 1, self.size_x):
-            if self._pixval_to_pwr(pixval := self.pixels[x, row_index]) != self.current_pos.pwr:
-                if pixval != self._pixval_to_pwr(self.off_pwr):
-                    return x, pixval
-
-        return False, False
+    def pwr_map(self, pixval):
+        pwr = round(((pixval / 255) * (self.max_pwr - self.min_pwr)) + self.min_pwr)
+        self.pwr(pwr)
 
 
 class LineGcode(Gcode):

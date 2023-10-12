@@ -1,7 +1,6 @@
 import configparser
 
 from src.gcode_processing import generate_scan_gcode, generate_cut_gcode
-from src.gcode_tools import Gcode
 from src.image_processing import process_image_for_drawing, process_image_for_cut, visualize_gcode_as_image
 
 DEFAULT_SETTINGS_FILE = "src/default/settings.ini"
@@ -24,7 +23,6 @@ class Engraver:
             - load_header(filename*) - loads header file, if no argument or not called, default is used
             - load_footer(filename*) - loads footer file, if no argument or not called, default is used
             - set_image_properties(horizontal_size*, resolution*) - overrides basic image properties from settings
-            - move_to_starting_position(x*, y*) - moves to offset position
             - add_drawing(image filename) - creates GCODE for drawing
             - add_cut(image filename, show outline*) - creates GCODE for cutting
             - save_gcode(name) - saves GCODE
@@ -75,16 +73,6 @@ class Engraver:
         if resolution is not None:
             self.settings["res_x"] = resolution
 
-    def move_to_starting_position(self, x=None, y=None):
-        gcode = Gcode(self.settings["off_pwr"], res_x=1)
-        gcode.laser_off()
-        gcode.go(x if x else self.settings["offset_x"],
-                 y if y else self.settings["offset_y"],
-                 self.settings["travel_speed"])
-        gcode.reset_position()
-
-        self.gcode += gcode.code
-
     def add_drawing(self, filename):
         img_drawing = process_image_for_drawing(filename,
                                                 **self.settings)
@@ -133,5 +121,3 @@ class Engraver:
         gcode = self.header + self.gcode + self.footer
         with open("LAS_" + filename + ".gcode", "w") as output:
             output.write(gcode)
-
-

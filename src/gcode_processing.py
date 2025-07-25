@@ -53,7 +53,7 @@ def generate_scan_gcode(image, off_pwr, min_pwr, max_pwr, res_x, overscan_dist, 
         gcode.laser_off()
     print("\nDone")
     gcode.laser_off()
-    return gcode.code
+    return gcode.get_code()
 
 
 def generate_cut_gcode(cutting_lines, cut_pwr, off_pwr, cut_num, res_x,
@@ -77,4 +77,4 @@ def generate_cut_gcode(cutting_lines, cut_pwr, off_pwr, cut_num, res_x,
 
     gcode.laser_off()
     gcode.laser_off()
-    return gcode.code
+    return gcode.get_code()

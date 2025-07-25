@@ -12,7 +12,7 @@ class Gcode:
         self.off_pwr = off_pwr
         self.res_x = res_x
 
-        self.code = str()
+        self.code = list()
 
         self.current_pos = Pos()
 
@@ -40,21 +40,24 @@ class Gcode:
                 out += f" F{f}"
 
         if out:
-            self.code += "G1" + out + "\n"
+            self.code.append("G1" + out + "\n")
 
     def pwr(self, pwr, optimize=False):
         if optimize and pwr == self.current_pos.pwr:
             return
         self.current_pos.pwr = pwr
-        self.code += f"M106 S{pwr}\n"
+        self.code.append(f"M106 S{pwr}\n")
 
     def reset_position(self):
         self.current_pos.x = 0
         self.current_pos.y = 0
-        self.code += f"G92 X0 Y0\n"
+        self.code.append(f"G92 X0 Y0\n")
 
     def laser_off(self):
         self.pwr(self.off_pwr, optimize=False)
+
+    def get_code(self):
+        return "".join(self.code)
 
 
 class ScanGcode(Gcode):

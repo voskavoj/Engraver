@@ -8,8 +8,10 @@ def generate_scan_gcode(image, off_pwr, min_pwr, max_pwr, res_x, overscan_dist, 
     gcode = ScanGcode(res_x, off_pwr, min_pwr, max_pwr)
     gcode.laser_off()
 
+    print("Scanning")
     # x and y are in PIXELS
     for y in range(size_y):  # y - row
+        print(f"\rRow {y}/{size_y}", end="\r")
 
         # go to overscan distance, and if there is no pixel in row, continue to next row
         for i in range(size_x):
@@ -49,7 +51,7 @@ def generate_scan_gcode(image, off_pwr, min_pwr, max_pwr, res_x, overscan_dist, 
 
         # turn off laser
         gcode.laser_off()
-
+    print("\nDone")
     gcode.laser_off()
     return gcode.code
 
